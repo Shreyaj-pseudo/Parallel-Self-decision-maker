@@ -1,37 +1,50 @@
 import asyncio
-from config import client
-from debate import run_sequential_debate
-
+from debate import DebateOrchestrator
+from memory_setup import add_memory
+from prompts import RISK_AVERSE_PROMPT, OPTIMISTIC_PROMPT, STRATEGIC_PROMPT, MODERATOR_PROMPT
+import requests
+from utils import load_sessions, save_session
 
 async def main():
-    # 1️⃣ Create a single assistant (identity container)
-    assistant = await client.create_assistant(
-        name="Parallel Self",
-        system_prompt=(
-            "You are a multi-agent cognitive system. "
-            "Different personas will speak sequentially in this thread. "
-            "You must strictly follow the persona instructions included "
-            "inside each user message."
-        )
-    )
+    debate = DebateOrchestrator()
+    await debate.setup()
+    
+    sessions = load_sessions()
+    
+    print("\n--- 🧠 Parallel Self: Session Manager ---")
+    if sessions:
+        print("Available Sessions:")
+        for name in sessions:
+            print(f" • {name}")
+    else:
+        print("No saved sessions found.")
 
-    # 2️⃣ Create shared persistent thread
-    thread = await client.create_thread(assistant.assistant_id)
+    choice = input("\nEnter session name to RESUME or 'new' to start fresh: ").strip()
 
-    print("\n🧠 Parallel Self is ready.")
-    print("Type 'exit' to quit.\n")
+    active_thread_id = None
+    session_name = choice
 
-    while True:
-        topic = input("Enter a decision or problem: ")
+    if choice.lower() != 'new' and choice in sessions:
+        active_thread_id = sessions[choice]
+    else:
+        session_name = input("What would you like to name this new session? ")
 
-        if topic.lower() == "exit":
-            break
+    topic = input(f"\n[Topic for {session_name}]: ")
 
-        try:
-            await run_sequential_debate(thread.thread_id, topic)
-        except Exception as e:
-            print(f"\nError occurred: {e}")
+    prompts_map = {
+        "risk": RISK_AVERSE_PROMPT,
+        "optimistic": OPTIMISTIC_PROMPT,
+        "strategic": STRATEGIC_PROMPT,
+        "moderator": MODERATOR_PROMPT
+    }
 
+    # Execute the debate
+    _, final_thread_id = await debate.run_debate(topic, prompts_map, active_thread_id)
+
+    # Save progress to our local JSON database
+    save_session(session_name, final_thread_id)
+    print(f"\n✅ Progress saved in session: '{session_name}'")
 
 if __name__ == "__main__":
     asyncio.run(main())
+    
