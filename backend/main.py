@@ -1,5 +1,5 @@
 import asyncio
-from debate import DebateOrchestrator
+from backend.debate import DebateOrchestrator
 from memory_setup import add_memory
 from prompts import RISK_AVERSE_PROMPT, OPTIMISTIC_PROMPT, STRATEGIC_PROMPT, MODERATOR_PROMPT
 import requests

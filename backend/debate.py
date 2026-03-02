@@ -1,8 +1,8 @@
 import os
+from typing import Self
 from backboard import BackboardClient # Standard SDK naming
+from config import DEFAULT_MODEL, DEFAULT_PROVIDER
 
-DEFAULT_PROVIDER = "openai"
-DEFAULT_MODEL = "gpt-4o-mini"
 
 class DebateOrchestrator:
     def __init__(self):
@@ -40,8 +40,7 @@ class DebateOrchestrator:
         """Executes a single turn in the shared memory thread."""
         
         # We wrap the persona in a clear block so the LLM distinguishes it from history
-        content = f"ACT AS: {persona_prompt}\n\nCONTEXT: {topic if topic else 'Analyze the previous discussion.'}"
-
+        content = f"ACT AS: {persona_prompt}\n\nCONTEXT: {topic if topic else 'Analyze the previous discussion.'}\n\nIMPORTANT: Draw on everything you know about this user from memory when forming your response."
         # memory="Auto" is the key here; it tells Backboard to 'Remember' the previous selves
         response = await self.client.add_message(
             thread_id=thread_id,

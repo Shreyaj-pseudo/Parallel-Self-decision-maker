@@ -7,6 +7,7 @@ load_dotenv()
 API_KEY = os.getenv("BACKBOARD_API_KEY")
 
 def add_memory(assistant_id: str, content: str):
+    assistant_id = os.getenv("BACKBOARD_ASSISTANT_ID")
     url = f"https://app.backboard.io/api/assistants/{assistant_id}/memories"
     headers = {"X-API-Key": API_KEY}
     payload = {"content": content}
