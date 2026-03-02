@@ -41,42 +41,73 @@
       border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      padding: 28px 0;
       height: 100vh;
       overflow-y: auto;
     }
 
+    #sidebar::-webkit-scrollbar { width: 3px; }
+    #sidebar::-webkit-scrollbar-thumb { background: var(--border); }
+
     .sidebar-logo {
-      padding: 0 24px 28px;
+      padding: 24px 20px 20px;
       border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
     .sidebar-logo h1 {
       font-family: 'DM Serif Display', serif;
       font-size: 20px;
       letter-spacing: -0.3px;
-      color: var(--text);
     }
 
     .sidebar-logo span {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--muted);
-      font-family: 'DM Mono', monospace;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
     }
 
-    .sidebar-section {
-      padding: 20px 24px 8px;
+    .collapsible-section { border-bottom: 1px solid var(--border); flex-shrink: 0; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .section-header:hover { background: rgba(255,255,255,0.02); }
+
+    .section-title {
       font-size: 10px;
       letter-spacing: 2px;
       text-transform: uppercase;
       color: var(--muted);
+      font-weight: 500;
     }
 
+    .section-arrow {
+      font-size: 10px;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+
+    .section-arrow.open { transform: rotate(180deg); }
+
+    .section-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.25s ease;
+    }
+
+    .section-body.open { max-height: 600px; }
+
     .session-item {
-      padding: 10px 24px;
-      font-size: 13px;
+      padding: 9px 20px;
+      font-size: 12px;
       color: var(--muted);
       cursor: pointer;
       border-left: 2px solid transparent;
@@ -92,23 +123,31 @@
       background: rgba(192,132,252,0.05);
     }
 
-    .new-session-btn {
-      margin: 16px 16px 0;
-      padding: 10px;
+    .sidebar-btn {
+      margin: 10px 14px 14px;
+      padding: 9px;
       background: none;
       border: 1px solid var(--border);
       color: var(--muted);
       font-family: 'DM Mono', monospace;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
       border-radius: 6px;
       transition: all 0.15s;
-      letter-spacing: 0.5px;
+      width: calc(100% - 28px);
+      display: block;
     }
 
-    .new-session-btn:hover {
-      border-color: var(--moderator);
-      color: var(--moderator);
+    .sidebar-btn:hover { border-color: var(--moderator); color: var(--moderator); }
+
+    .sidebar-btn.memory-btn { margin-top: 0; }
+    .sidebar-btn.memory-btn:hover { border-color: var(--optimist); color: var(--optimist); }
+
+    .no-items {
+      padding: 10px 20px 4px;
+      font-size: 11px;
+      color: var(--muted);
+      font-style: italic;
     }
 
     /* ── MAIN ── */
@@ -120,13 +159,12 @@
       overflow: hidden;
     }
 
-    /* ── TOPBAR ── */
     #topbar {
-      padding: 20px 32px;
+      padding: 18px 28px;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       background: var(--surface);
     }
 
@@ -147,7 +185,7 @@
     #topic-input::placeholder { color: var(--muted); }
 
     #session-name-input {
-      width: 180px;
+      width: 170px;
       background: var(--bg);
       border: 1px solid var(--border);
       color: var(--text);
@@ -173,19 +211,17 @@
       cursor: pointer;
       border-radius: 6px;
       transition: all 0.15s;
-      letter-spacing: 0.5px;
       white-space: nowrap;
     }
 
     #run-btn:hover { opacity: 0.85; transform: translateY(-1px); }
     #run-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-    /* ── PANELS GRID ── */
+    /* ── PANELS ── */
     #panels {
       flex: 1;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 0;
       overflow: hidden;
     }
 
@@ -200,11 +236,12 @@
     .panel:last-child { border-right: none; }
 
     .panel-header {
-      padding: 20px 24px 16px;
+      padding: 16px 20px 12px;
       border-bottom: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
+      position: relative;
     }
 
     .panel-tag {
@@ -216,23 +253,40 @@
 
     .panel-title {
       font-family: 'DM Serif Display', serif;
-      font-size: 18px;
+      font-size: 17px;
       line-height: 1.2;
     }
 
     .panel-dot {
-      width: 7px;
-      height: 7px;
+      width: 7px; height: 7px;
       border-radius: 50%;
       margin-top: 2px;
       transition: all 0.3s;
     }
 
-    .panel-dot.idle { opacity: 0.3; }
-    .panel-dot.thinking {
-      animation: pulse 1s infinite;
-    }
+    .panel-dot.idle { opacity: 0.25; }
+    .panel-dot.thinking { animation: pulse 1s infinite; }
     .panel-dot.done { opacity: 1; }
+
+    /* expand button on each panel */
+    .panel-expand {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-family: 'DM Mono', monospace;
+      transition: all 0.15s;
+      opacity: 0;
+    }
+
+    .panel:hover .panel-expand { opacity: 1; }
+    .panel-expand:hover { color: var(--text); border-color: var(--text); }
 
     @keyframes pulse {
       0%, 100% { transform: scale(1); opacity: 0.6; }
@@ -241,7 +295,7 @@
 
     .panel-body {
       flex: 1;
-      padding: 24px;
+      padding: 18px 20px;
       overflow-y: auto;
       font-size: 13px;
       line-height: 1.75;
@@ -250,37 +304,30 @@
     }
 
     .panel-body.has-content { color: var(--text); }
-
-    .panel-body::-webkit-scrollbar { width: 4px; }
-    .panel-body::-webkit-scrollbar-track { background: transparent; }
+    .panel-body::-webkit-scrollbar { width: 3px; }
     .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    .placeholder-text {
-      font-style: italic;
-      opacity: 0.4;
-      font-size: 12px;
-    }
+    .placeholder-text { font-style: italic; opacity: 0.35; font-size: 12px; }
 
-    /* ── PER PANEL COLORS ── */
-    #panel-risk .panel-tag,
-    #panel-risk .panel-dot { color: var(--risk); background: var(--risk); }
+    #panel-risk .panel-tag { color: var(--risk); }
+    #panel-risk .panel-dot { background: var(--risk); }
     #panel-risk.active { background: var(--risk-dim); }
 
-    #panel-optimistic .panel-tag,
-    #panel-optimistic .panel-dot { color: var(--optimist); background: var(--optimist); }
+    #panel-optimistic .panel-tag { color: var(--optimist); }
+    #panel-optimistic .panel-dot { background: var(--optimist); }
     #panel-optimistic.active { background: var(--optimist-dim); }
 
-    #panel-strategic .panel-tag,
-    #panel-strategic .panel-dot { color: var(--strategic); background: var(--strategic); }
+    #panel-strategic .panel-tag { color: var(--strategic); }
+    #panel-strategic .panel-dot { background: var(--strategic); }
     #panel-strategic.active { background: var(--strategic-dim); }
 
-    #panel-moderator .panel-tag,
-    #panel-moderator .panel-dot { color: var(--moderator); background: var(--moderator); }
+    #panel-moderator .panel-tag { color: var(--moderator); }
+    #panel-moderator .panel-dot { background: var(--moderator); }
     #panel-moderator.active { background: var(--moderator-dim); }
 
     /* ── STATUS BAR ── */
     #statusbar {
-      padding: 10px 32px;
+      padding: 9px 28px;
       border-top: 1px solid var(--border);
       font-size: 11px;
       color: var(--muted);
@@ -291,48 +338,44 @@
     }
 
     #status-dot {
-      width: 6px;
-      height: 6px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: var(--muted);
-      transition: background 0.3s;
+      flex-shrink: 0;
     }
 
     #status-dot.running { background: var(--moderator); animation: pulse 1s infinite; }
     #status-dot.done { background: var(--optimist); }
 
-    /* ── MODAL ── */
-    #modal-overlay {
+    /* ── SHARED OVERLAY STYLES ── */
+    .overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(10,10,15,0.85);
+      background: rgba(10,10,15,0.88);
       z-index: 100;
       align-items: center;
       justify-content: center;
     }
 
-    #modal-overlay.visible { display: flex; }
+    .overlay.visible { display: flex; }
 
+    /* ── NEW SESSION MODAL ── */
     #modal {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 32px;
-      width: 400px;
+      padding: 30px;
+      width: 420px;
     }
 
     #modal h2 {
       font-family: 'DM Serif Display', serif;
       font-size: 22px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
 
-    #modal p {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 24px;
-    }
+    #modal p { font-size: 12px; color: var(--muted); margin-bottom: 22px; }
 
     #modal input {
       width: 100%;
@@ -340,21 +383,17 @@
       border: 1px solid var(--border);
       color: var(--text);
       font-family: 'DM Mono', monospace;
-      font-size: 14px;
-      padding: 12px 16px;
+      font-size: 13px;
+      padding: 11px 14px;
       border-radius: 6px;
       outline: none;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
     }
 
     #modal input:focus { border-color: var(--moderator); }
 
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-      margin-top: 8px;
-    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
 
     .modal-cancel {
       padding: 9px 18px;
@@ -379,15 +418,225 @@
       border-radius: 6px;
     }
 
-    /* Text reveal animation */
+    /* ── MEMORY WINDOW ── */
+    #memory-window {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 680px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .mw-header {
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .mw-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+    }
+
+    .mw-header p { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+    .mw-close {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 6px 12px;
+      transition: all 0.15s;
+    }
+
+    .mw-close:hover { border-color: var(--risk); color: var(--risk); }
+
+    .mw-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    .mw-body::-webkit-scrollbar { width: 4px; }
+    .mw-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .memory-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 28px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    .memory-row:hover { background: rgba(255,255,255,0.02); }
+
+    .memory-index {
+      font-size: 10px;
+      color: var(--muted);
+      width: 20px;
+      flex-shrink: 0;
+      padding-top: 2px;
+    }
+
+    .memory-content {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    .memory-del-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: 'DM Mono', monospace;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .memory-del-btn:hover { border-color: var(--risk); color: var(--risk); }
+
+    .mw-add {
+      padding: 20px 28px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .mw-textarea {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      resize: none;
+      height: 60px;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.6;
+    }
+
+    .mw-textarea:focus { border-color: var(--optimist); }
+    .mw-textarea::placeholder { color: var(--muted); }
+
+    .mw-save-btn {
+      padding: 10px 18px;
+      background: none;
+      border: 1px solid var(--optimist);
+      color: var(--optimist);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .mw-save-btn:hover { background: var(--optimist); color: #0a0a0f; }
+
+    #mw-status {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 6px;
+      min-height: 14px;
+    }
+
+    .mw-empty {
+      padding: 40px 28px;
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* ── PANEL EXPAND MODAL ── */
+    #expand-window {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 640px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .ew-header {
+      padding: 22px 26px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .ew-tag {
+      font-size: 9px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .ew-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+    }
+
+    .ew-close {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 6px 12px;
+      transition: all 0.15s;
+    }
+
+    .ew-close:hover { border-color: var(--risk); color: var(--risk); }
+
+    .ew-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 26px;
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .ew-body::-webkit-scrollbar { width: 4px; }
+    .ew-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .ew-placeholder { font-style: italic; color: var(--muted); opacity: 0.5; }
+
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(4px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .text-reveal {
-      animation: fadeIn 0.4s ease forwards;
-    }
+    .text-reveal { animation: fadeIn 0.4s ease forwards; }
   </style>
 </head>
 <body>
@@ -398,22 +647,40 @@
     <h1>Parallel Self</h1>
     <span>Decision Engine</span>
   </div>
-  <div class="sidebar-section">Sessions</div>
-  <div id="session-list"></div>
-  <button class="new-session-btn" onclick="openNewSessionModal()">+ New Session</button>
+
+  <!-- SESSIONS -->
+  <div class="collapsible-section">
+    <div class="section-header" onclick="toggleSection('sessions')">
+      <span class="section-title">Sessions</span>
+      <span class="section-arrow open" id="arrow-sessions">▾</span>
+    </div>
+    <div class="section-body open" id="body-sessions">
+      <div id="session-list"></div>
+      <button class="sidebar-btn" onclick="openNewSessionModal()">+ New Session</button>
+    </div>
+  </div>
+
+  <!-- MEMORY -->
+  <div class="collapsible-section">
+    <div class="section-header" onclick="toggleSection('memory')">
+      <span class="section-title">Long-Term Memory</span>
+      <span class="section-arrow open" id="arrow-memory">▾</span>
+    </div>
+    <div class="section-body open" id="body-memory">
+      <div id="sidebar-memory-preview"></div>
+      <button class="sidebar-btn memory-btn" onclick="openMemoryWindow()">Manage Memories →</button>
+    </div>
+  </div>
 </aside>
 
 <!-- MAIN -->
 <div id="main">
-
-  <!-- TOPBAR -->
   <div id="topbar">
     <input id="topic-input" type="text" placeholder="What decision are you facing today?" />
     <input id="session-name-input" type="text" placeholder="Session name..." />
     <button id="run-btn" onclick="runDebate()">Run Debate →</button>
   </div>
 
-  <!-- PANELS -->
   <div id="panels">
 
     <div class="panel" id="panel-risk">
@@ -421,6 +688,7 @@
         <span class="panel-tag">Risk Analyst</span>
         <span class="panel-title">The Skeptic</span>
         <div class="panel-dot idle" id="dot-risk"></div>
+        <button class="panel-expand" onclick="expandPanel('risk', 'Risk Analyst', 'The Skeptic')">expand</button>
       </div>
       <div class="panel-body" id="body-risk">
         <span class="placeholder-text">Waiting for topic...</span>
@@ -432,6 +700,7 @@
         <span class="panel-tag">Opportunity Finder</span>
         <span class="panel-title">The Optimist</span>
         <div class="panel-dot idle" id="dot-optimistic"></div>
+        <button class="panel-expand" onclick="expandPanel('optimistic', 'Opportunity Finder', 'The Optimist')">expand</button>
       </div>
       <div class="panel-body" id="body-optimistic">
         <span class="placeholder-text">Waiting for topic...</span>
@@ -443,6 +712,7 @@
         <span class="panel-tag">Strategist</span>
         <span class="panel-title">The Analyst</span>
         <div class="panel-dot idle" id="dot-strategic"></div>
+        <button class="panel-expand" onclick="expandPanel('strategic', 'Strategist', 'The Analyst')">expand</button>
       </div>
       <div class="panel-body" id="body-strategic">
         <span class="placeholder-text">Waiting for topic...</span>
@@ -454,6 +724,7 @@
         <span class="panel-tag">Moderator</span>
         <span class="panel-title">The Verdict</span>
         <div class="panel-dot idle" id="dot-moderator"></div>
+        <button class="panel-expand" onclick="expandPanel('moderator', 'Moderator', 'The Verdict')">expand</button>
       </div>
       <div class="panel-body" id="body-moderator">
         <span class="placeholder-text">Waiting for topic...</span>
@@ -462,24 +733,59 @@
 
   </div>
 
-  <!-- STATUSBAR -->
   <div id="statusbar">
     <div id="status-dot"></div>
     <span id="status-text">Ready</span>
   </div>
-
 </div>
 
 <!-- NEW SESSION MODAL -->
-<div id="modal-overlay">
+<div id="modal-overlay" class="overlay">
   <div id="modal">
     <h2>New Session</h2>
     <p>Give this debate a name so you can return to it later.</p>
     <input id="modal-session-name" type="text" placeholder="e.g. Backboard Internship" />
     <input id="modal-topic" type="text" placeholder="What's the decision?" />
     <div class="modal-actions">
-      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-cancel" onclick="closeModal('modal-overlay')">Cancel</button>
       <button class="modal-confirm" onclick="confirmNewSession()">Start Debate</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEMORY WINDOW -->
+<div id="memory-overlay" class="overlay">
+  <div id="memory-window">
+    <div class="mw-header">
+      <div>
+        <h2>Long-Term Memory</h2>
+        <p>Everything your assistant knows about you.</p>
+      </div>
+      <button class="mw-close" onclick="closeModal('memory-overlay')">✕ Close</button>
+    </div>
+    <div class="mw-body" id="mw-list"></div>
+    <div class="mw-add">
+      <div style="flex:1">
+        <textarea id="mw-textarea" class="mw-textarea" placeholder="Tell me something to remember..."></textarea>
+        <div id="mw-status"></div>
+      </div>
+      <button class="mw-save-btn" onclick="saveMemory()">+ Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL EXPAND WINDOW -->
+<div id="expand-overlay" class="overlay">
+  <div id="expand-window">
+    <div class="ew-header">
+      <div>
+        <div class="ew-tag" id="ew-tag"></div>
+        <div class="ew-title" id="ew-title"></div>
+      </div>
+      <button class="ew-close" onclick="closeModal('expand-overlay')">✕ Close</button>
+    </div>
+    <div class="ew-body" id="ew-body">
+      <span class="ew-placeholder">No response yet.</span>
     </div>
   </div>
 </div>
@@ -487,13 +793,37 @@
 <script>
   const API = "http://localhost:8000";
 
-  // ── Load sessions on start ──
+  // ── Collapsible ──
+  function toggleSection(name) {
+    const body = document.getElementById(`body-${name}`);
+    const arrow = document.getElementById(`arrow-${name}`);
+    const isOpen = body.classList.contains("open");
+    body.classList.toggle("open", !isOpen);
+    arrow.classList.toggle("open", !isOpen);
+  }
+
+  // ── Overlays ──
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("visible");
+  }
+
+  document.querySelectorAll(".overlay").forEach(el => {
+    el.addEventListener("click", (e) => {
+      if (e.target === el) el.classList.remove("visible");
+    });
+  });
+
+  // ── Sessions ──
   async function loadSessions() {
     try {
       const res = await fetch(`${API}/sessions`);
       const data = await res.json();
       const list = document.getElementById("session-list");
       list.innerHTML = "";
+      if (!data.sessions.length) {
+        list.innerHTML = `<div class="no-items">No sessions yet.</div>`;
+        return;
+      }
       data.sessions.forEach(name => {
         const el = document.createElement("div");
         el.className = "session-item";
@@ -501,9 +831,7 @@
         el.onclick = () => selectSession(name, el);
         list.appendChild(el);
       });
-    } catch(e) {
-      console.warn("Could not load sessions:", e);
-    }
+    } catch(e) { console.warn("Sessions load failed:", e); }
   }
 
   let activeSession = null;
@@ -513,17 +841,146 @@
     document.querySelectorAll(".session-item").forEach(i => i.classList.remove("active"));
     el.classList.add("active");
     document.getElementById("session-name-input").value = name;
-    setStatus(`Loaded session: ${name}`, "");
+    setStatus(`Loaded: ${name}`, "");
   }
 
-  // ── Panel helpers ──
+  function openNewSessionModal() {
+    document.getElementById("modal-overlay").classList.add("visible");
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("visible");
+  }
+
+  function confirmNewSession() {
+    const name = document.getElementById("modal-session-name").value.trim();
+    const topic = document.getElementById("modal-topic").value.trim();
+    if (!name || !topic) return;
+    document.getElementById("session-name-input").value = name;
+    document.getElementById("topic-input").value = topic;
+    closeModal("modal-overlay");
+    runDebate();
+  }
+
+  // ── Memories ──
+  let memoriesCache = [];
+
+  async function loadMemories() {
+    try {
+      const res = await fetch(`${API}/memory/list`);
+      const data = await res.json();
+      memoriesCache = data.memories || [];
+      renderMemoryWindow();
+      renderSidebarMemoryPreview();
+    } catch(e) {
+      document.getElementById("mw-list").innerHTML = `<div class="mw-empty">Could not load memories.</div>`;
+    }
+  }
+
+  function renderMemoryWindow() {
+    const list = document.getElementById("mw-list");
+    if (!memoriesCache.length) {
+      list.innerHTML = `<div class="mw-empty">No memories saved yet.</div>`;
+      return;
+    }
+    list.innerHTML = "";
+    memoriesCache.forEach((m, i) => {
+      const row = document.createElement("div");
+      row.className = "memory-row";
+      row.innerHTML = `
+        <span class="memory-index">${String(i + 1).padStart(2, "0")}</span>
+        <span class="memory-content">${m.content}</span>
+        <button class="memory-del-btn" onclick="deleteMemory('${m.id}', this)">delete</button>
+      `;
+      list.appendChild(row);
+    });
+  }
+
+  function renderSidebarMemoryPreview() {
+    const preview = document.getElementById("sidebar-memory-preview");
+    if (!memoriesCache.length) {
+      preview.innerHTML = `<div class="no-items">No memories yet.</div>`;
+      return;
+    }
+    // Show count only — clean and minimal
+    preview.innerHTML = `<div class="no-items">${memoriesCache.length} memor${memoriesCache.length === 1 ? "y" : "ies"} stored.</div>`;
+  }
+
+  function openMemoryWindow() {
+    document.getElementById("memory-overlay").classList.add("visible");
+    loadMemories();
+  }
+
+  async function saveMemory() {
+    const content = document.getElementById("mw-textarea").value.trim();
+    const status = document.getElementById("mw-status");
+    if (!content) return;
+
+    status.textContent = "Saving...";
+    status.style.color = "var(--muted)";
+    try {
+      const res = await fetch(`${API}/memory/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content })
+      });
+      const data = await res.json();
+      if (data.status === "saved") {
+        status.textContent = "✓ Saved";
+        status.style.color = "var(--optimist)";
+        document.getElementById("mw-textarea").value = "";
+        setTimeout(() => { status.textContent = ""; }, 2500);
+        loadMemories();
+      }
+    } catch(e) {
+      status.textContent = "Error saving";
+      status.style.color = "var(--risk)";
+    }
+  }
+
+  async function deleteMemory(memoryId, btn) {
+    btn.textContent = "...";
+    try {
+      const res = await fetch(`${API}/memory/${memoryId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.status === "deleted") {
+        memoriesCache = memoriesCache.filter(m => m.id !== memoryId);
+        renderMemoryWindow();
+        renderSidebarMemoryPreview();
+      } else {
+        btn.textContent = "delete";
+      }
+    } catch(e) { btn.textContent = "delete"; }
+  }
+
+  // ── Panel expand ──
+  const panelColors = {
+    risk: "var(--risk)",
+    optimistic: "var(--optimist)",
+    strategic: "var(--strategic)",
+    moderator: "var(--moderator)"
+  };
+
+  function expandPanel(persona, tag, title) {
+    const bodyEl = document.getElementById(`body-${persona}`);
+    const content = bodyEl.querySelector(".placeholder-text") ? null : bodyEl.innerHTML;
+
+    document.getElementById("ew-tag").textContent = tag;
+    document.getElementById("ew-tag").style.color = panelColors[persona];
+    document.getElementById("ew-title").textContent = title;
+
+    const ewBody = document.getElementById("ew-body");
+    ewBody.innerHTML = content || `<span class="ew-placeholder">No response yet — run a debate first.</span>`;
+
+    document.getElementById("expand-overlay").classList.add("visible");
+  }
+
+  // ── Panels ──
   function setPanel(persona, status, text = "") {
     const dot = document.getElementById(`dot-${persona}`);
     const body = document.getElementById(`body-${persona}`);
     const panel = document.getElementById(`panel-${persona}`);
-
     dot.className = `panel-dot ${status}`;
-
     if (status === "thinking") {
       panel.classList.add("active");
       body.innerHTML = `<span class="placeholder-text">Thinking...</span>`;
@@ -544,14 +1001,13 @@
 
   function setStatus(text, state) {
     document.getElementById("status-text").textContent = text;
-    document.getElementById("status-dot").className = state ? `${state}` : "";
+    document.getElementById("status-dot").className = state || "";
   }
 
   // ── Run Debate ──
   async function runDebate() {
     const topic = document.getElementById("topic-input").value.trim();
     const sessionName = document.getElementById("session-name-input").value.trim();
-
     if (!topic) { alert("Please enter a topic."); return; }
     if (!sessionName) { alert("Please enter a session name."); return; }
 
@@ -562,27 +1018,28 @@
 
     const isResume = activeSession === sessionName;
     const url = `${API}/debate/stream?session_name=${encodeURIComponent(sessionName)}&topic=${encodeURIComponent(topic)}&resume=${isResume}`;
-
     const evtSource = new EventSource(url);
 
     evtSource.onmessage = (e) => {
       const data = JSON.parse(e.data);
-
       if (data.persona && data.status === "thinking") {
         setPanel(data.persona, "thinking");
         setStatus(`${data.persona} is thinking...`, "running");
       }
-
       if (data.persona && data.status === "done") {
         setPanel(data.persona, "done", data.text);
       }
-
       if (data.status === "finished") {
         evtSource.close();
         btn.disabled = false;
-        setStatus(`Debate complete. Thread saved.`, "done");
+        setStatus("Debate complete. Thread saved.", "done");
         activeSession = sessionName;
         loadSessions();
+      }
+      if (data.status === "error") {
+        evtSource.close();
+        btn.disabled = false;
+        setStatus(`Error: ${data.message}`, "");
       }
     };
 
@@ -593,32 +1050,9 @@
     };
   }
 
-  // ── Modal ──
-  function openNewSessionModal() {
-    document.getElementById("modal-overlay").classList.add("visible");
-  }
-
-  function closeModal() {
-    document.getElementById("modal-overlay").classList.remove("visible");
-  }
-
-  function confirmNewSession() {
-    const name = document.getElementById("modal-session-name").value.trim();
-    const topic = document.getElementById("modal-topic").value.trim();
-    if (!name || !topic) return;
-    document.getElementById("session-name-input").value = name;
-    document.getElementById("topic-input").value = topic;
-    closeModal();
-    runDebate();
-  }
-
-  // Close modal on overlay click
-  document.getElementById("modal-overlay").addEventListener("click", (e) => {
-    if (e.target === e.currentTarget) closeModal();
-  });
-
   // ── Init ──
   loadSessions();
+  loadMemories();
 </script>
 
 </body>

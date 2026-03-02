@@ -1,13 +1,18 @@
-import os
-import json
-import asyncio
 import sys
+import os
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
+import json
+import asyncio
+import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from debate import DebateOrchestrator
 from prompts import RISK_AVERSE_PROMPT, OPTIMISTIC_PROMPT, STRATEGIC_PROMPT, MODERATOR_PROMPT
@@ -31,6 +36,10 @@ PROMPTS_MAP = {
 
 STAGES = ["risk", "optimistic", "strategic", "moderator"]
 
+API_KEY = os.getenv("BACKBOARD_API_KEY")
+ASSISTANT_ID = os.getenv("BACKBOARD_ASSISTANT_ID")
+BACKBOARD_BASE = "https://app.backboard.io/api"
+
 
 # ── Request Models ──
 
@@ -42,29 +51,31 @@ class ResumeDebateRequest(BaseModel):
     session_name: str
     topic: str
 
+class MemoryRequest(BaseModel):
+    content: str
+
 
 # ── Helpers ──
 
 def sse(data: dict) -> str:
-    """Format a dict as a Server-Sent Event string."""
     return f"data: {json.dumps(data)}\n\n"
 
+def backboard_headers():
+    return {"X-API-Key": API_KEY}
 
-# ── Endpoints ──
+
+# ── Session Endpoints ──
 
 @app.get("/sessions")
 def get_sessions():
-    """Return all saved session names."""
     sessions = load_sessions()
     return {"sessions": list(sessions.keys())}
 
 
+# ── Debate Endpoints ──
+
 @app.get("/debate/stream")
 async def stream_debate(session_name: str, topic: str, resume: bool = False):
-    """
-    SSE endpoint. Runs each persona turn sequentially and streams
-    results back to the frontend as each one completes.
-    """
     async def event_generator():
         try:
             sessions = load_sessions()
@@ -73,29 +84,18 @@ async def stream_debate(session_name: str, topic: str, resume: bool = False):
             debate = DebateOrchestrator()
             await debate.setup()
 
-            # Create or reuse thread
             if thread_id is None:
                 thread = await debate.create_thread()
                 thread_id_active = thread.thread_id
             else:
                 thread_id_active = thread_id
 
-            # Run each persona one at a time and stream results
             for stage in STAGES:
-                # Tell the frontend this persona is now thinking
                 yield sse({"persona": stage, "status": "thinking"})
-
                 current_topic = topic if stage == "risk" else None
-                output = await debate.send_turn(
-                    thread_id_active,
-                    PROMPTS_MAP[stage],
-                    current_topic
-                )
-
-                # Send the completed response
+                output = await debate.send_turn(thread_id_active, PROMPTS_MAP[stage], current_topic)
                 yield sse({"persona": stage, "status": "done", "text": output})
 
-            # Save session and signal completion
             save_session(session_name, thread_id_active)
             yield sse({"status": "finished", "thread_id": thread_id_active})
 
@@ -105,30 +105,44 @@ async def stream_debate(session_name: str, topic: str, resume: bool = False):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
-@app.post("/debate/new")
-async def new_debate(req: NewDebateRequest):
-    """Non-streaming endpoint — runs full debate and returns all results."""
-    debate = DebateOrchestrator()
-    await debate.setup()
+# ── Memory Endpoints ──
 
-    _, thread_id = await debate.run_debate(req.topic, PROMPTS_MAP, thread_id=None)
-    save_session(req.session_name, thread_id)
+@app.get("/memory/list")
+def list_memories():
+    """Fetch all long-term memories for the assistant."""
+    ASSISTANT_ID = os.getenv("BACKBOARD_ASSISTANT_ID")
+    response = requests.get(
+        f"https://app.backboard.io/api/assistants/{ASSISTANT_ID}/memories",
+        headers=backboard_headers()
+    )
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail="Failed to fetch memories.")
+    data = response.json()
+    return {"memories": data.get("memories", [])}
 
-    return {"session_name": req.session_name, "thread_id": thread_id, "status": "complete"}
+
+@app.post("/memory/add")
+def add_memory(req: MemoryRequest):
+    """Add a new memory to the assistant."""
+    ASSISTANT_ID = os.getenv("BACKBOARD_ASSISTANT_ID")
+    response = requests.post(
+        f"https://app.backboard.io/api/assistants/{ASSISTANT_ID}/memories",
+        headers=backboard_headers(),
+        json={"content": req.content}
+    )
+    if response.status_code not in (200, 201):
+        raise HTTPException(status_code=response.status_code, detail="Failed to add memory.")
+    return {"status": "saved", "content": req.content}
 
 
-@app.post("/debate/resume")
-async def resume_debate(req: ResumeDebateRequest):
-    """Non-streaming resume — runs debate on existing thread."""
-    sessions = load_sessions()
-    if req.session_name not in sessions:
-        raise HTTPException(status_code=404, detail="Session not found.")
-
-    thread_id = sessions[req.session_name]
-    debate = DebateOrchestrator()
-    await debate.setup()
-
-    _, final_thread_id = await debate.run_debate(req.topic, PROMPTS_MAP, thread_id=thread_id)
-    save_session(req.session_name, final_thread_id)
-
-    return {"session_name": req.session_name, "thread_id": final_thread_id, "status": "complete"}
+@app.delete("/memory/{memory_id}")
+def delete_memory(memory_id: str):
+    """Delete a specific memory by ID."""
+    ASSISTANT_ID = os.getenv("BACKBOARD_ASSISTANT_ID")
+    response = requests.delete(
+        f"https://app.backboard.io/api/assistants/{ASSISTANT_ID}/memories/{memory_id}",
+        headers=backboard_headers()
+    )
+    if response.status_code not in (200, 204):
+        raise HTTPException(status_code=response.status_code, detail="Failed to delete memory.")
+    return {"status": "deleted", "memory_id": memory_id}
