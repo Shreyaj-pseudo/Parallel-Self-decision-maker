@@ -121,7 +121,6 @@ DEFAULT_PROVIDER = "your-provider"
 
 ## Running the Application
 
-<<<<<<< HEAD
 Run the `start.bat` file you should see **two terminals** open simultaneously.
 
 ### Terminal 1 — The Backend API
@@ -143,29 +142,6 @@ you should see
 
 ```
 Serving HTTP on :: port 3000 (http://[::]:3000/) ...
-=======
-You need **two terminals** open simultaneously.
-
-### Terminal 1 — Start the Backend API
-
-```bash
-cd "path/to/parallel-self/backend"
-uvicorn api:app --reload
-```
-
-You should see:
-
-```
-INFO:     Uvicorn running on http://127.0.0.1:8000
-INFO:     Application startup complete.
-```
-
-### Terminal 2 — Serve the Frontend
-
-```bash
-cd "path/to/parallel-self/frontend"
-python -m http.server 3000
->>>>>>> e2117c4368b4b25ec380e214120312e4a43745f6
 ```
 
 ### Open the App
