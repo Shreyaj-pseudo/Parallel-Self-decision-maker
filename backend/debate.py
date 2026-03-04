@@ -1,6 +1,6 @@
 import os
 from typing import Self
-from backboard import BackboardClient # Standard SDK naming
+from backboard import BackboardClient
 from config import DEFAULT_MODEL, DEFAULT_PROVIDER
 
 
